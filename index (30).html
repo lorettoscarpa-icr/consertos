@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Consertos — Loretto Scarpa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Barlow:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --verde:#4a5c2a;--verde-fundo:#3b4a22;--verde-escuro:#2c3719;--verde-noite:#1f2711;--verde-claro:#5c7035;
+    --gold:#c9a950;--gold-claro:#e6d18a;--amber:#d08a45;--creme:#f1ede1;--creme-suave:#bdb9a6;
+    --linha:rgba(201,169,80,.22);--linha-fraca:rgba(241,237,225,.1);--vermelho:#e6b8b8;
+    --azul:#7fa6c9;--verde-ok:#8bb06a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{background:var(--verde-fundo);color:var(--creme);font-family:'Barlow',sans-serif;font-size:15px;line-height:1.5;min-height:100vh}
+  a{color:inherit}
+  h1,h2,h3{font-family:'Playfair Display',serif;font-weight:600;margin:0}
+  .mono{font-family:'DM Mono',monospace}
+  .wrap{max-width:760px;margin:0 auto;padding:18px 16px 90px}
+  /* header */
+  .head{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .head .kick{color:var(--gold);font-family:'Barlow',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:4px;font-size:11px}
+  .head h1{font-size:26px;color:var(--creme)}
+  .sub{color:var(--creme-suave);font-size:13.5px;margin:2px 0 16px}
+  .quem{display:inline-flex;align-items:center;gap:8px;background:rgba(201,169,80,.08);border:1px solid var(--linha);border-radius:999px;padding:5px 12px 5px 6px;font-size:13px;color:var(--gold-claro)}
+  .quem .ava{width:26px;height:26px;border-radius:50%;background:var(--verde-noite);border:1px solid var(--linha);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--gold);font-size:12px;overflow:hidden}
+  .quem .ava img{width:100%;height:100%;object-fit:cover}
+  /* tabs */
+  .tabs{display:flex;gap:8px;margin:16px 0 18px}
+  .tab{flex:1;text-align:center;padding:11px 8px;border-radius:12px;border:1px solid var(--linha);background:rgba(255,255,255,.02);color:var(--creme-suave);cursor:pointer;font-weight:600;font-size:14.5px;transition:.16s}
+  .tab.on{background:rgba(201,169,80,.12);border-color:var(--gold);color:var(--gold-claro)}
+  .tab .n{display:inline-block;min-width:20px;margin-left:4px;font-size:12px;background:var(--gold);color:var(--verde-noite);border-radius:999px;padding:0 6px;font-weight:700}
+  .segs{display:flex;gap:6px;background:var(--verde-noite);border:1px solid var(--linha);border-radius:12px;padding:4px;margin-bottom:14px}
+  .seg{flex:1;text-align:center;padding:8px 6px;border-radius:9px;color:var(--creme-suave);cursor:pointer;font-weight:600;font-size:13.5px;transition:.14s}
+  .seg.on{background:rgba(201,169,80,.14);color:var(--gold-claro)}
+  .seg .n{display:inline-block;min-width:18px;margin-left:4px;font-size:11px;background:var(--gold);color:var(--verde-noite);border-radius:999px;padding:0 5px;font-weight:700}
+  .cc-meta{margin-top:7px;font-size:12px;color:var(--creme-suave);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .cc-meta .pill{background:rgba(255,255,255,.03);border:1px solid var(--linha-fraca);border-radius:999px;padding:2px 9px}
+  .cc-meta .pill.alerta{color:var(--amber);border-color:rgba(208,138,69,.35)}
+  /* card / form */
+  .card{background:var(--verde-escuro);border:1px solid var(--linha);border-radius:16px;padding:18px 16px}
+  .card h3{font-size:19px;margin-bottom:2px}
+  .card .hint{color:var(--creme-suave);font-size:13px;margin:4px 0 14px}
+  label.lbl{display:block;font-weight:600;font-size:12.5px;letter-spacing:.4px;color:var(--gold-claro);margin:14px 0 5px}
+  label.lbl .req{color:var(--vermelho);margin-left:2px}
+  .fld{width:100%;background:var(--verde-noite);border:1px solid var(--linha);border-radius:10px;color:var(--creme);padding:12px 13px;font-family:'Barlow',sans-serif;font-size:15px;outline:none;transition:border-color .16s}
+  .fld:focus{border-color:var(--gold)}
+  select.fld{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23c9a950' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+  textarea.fld{min-height:74px;resize:vertical}
+  .err-box{outline:1px solid var(--vermelho);outline-offset:3px}
+  /* foto */
+  .foto-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+  .foto-row button{flex:1;min-width:90px;background:rgba(201,169,80,.08);border:1px solid var(--linha);color:var(--creme);border-radius:10px;padding:10px;font-size:13.5px;cursor:pointer}
+  .foto-row button:hover{background:rgba(201,169,80,.16)}
+  #preview{display:none;margin-top:12px;max-width:100%;max-height:230px;border-radius:12px;border:1px solid var(--linha)}
+  #preview.show{display:block}
+  .hide{display:none!important}
+  /* botão principal */
+  .btn-ouro{width:100%;margin-top:20px;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold-claro));color:var(--verde-noite);font-family:'Barlow',sans-serif;font-weight:700;letter-spacing:.6px;font-size:15px;cursor:pointer;transition:opacity .16s}
+  .btn-ouro:hover{opacity:.9}
+  .btn-ouro:disabled{opacity:.5;cursor:not-allowed}
+  .btn-linha{background:rgba(201,169,80,.08);border:1px solid var(--linha);color:var(--gold-claro);border-radius:10px;padding:9px 12px;font-size:13px;cursor:pointer;font-weight:600}
+  .btn-linha:hover{background:rgba(201,169,80,.16)}
+  /* acompanhar */
+  .resumo{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .chip{background:var(--verde-escuro);border:1px solid var(--linha);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--creme-suave);flex:1;min-width:120px}
+  .chip b{display:block;font-family:'DM Mono',monospace;font-size:20px;color:var(--gold-claro)}
+  .busca{margin-bottom:12px}
+  .cc{background:var(--verde-escuro);border:1px solid var(--linha);border-radius:14px;padding:14px;margin-bottom:12px}
+  .cc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .cc-tk{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold)}
+  .cc-cli{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;margin:1px 0}
+  .cc-mod{color:var(--creme-suave);font-size:13.5px}
+  .cc-tipo{display:inline-block;margin-top:6px;font-size:12px;color:var(--gold-claro);background:rgba(201,169,80,.1);border:1px solid var(--linha);border-radius:999px;padding:2px 10px}
+  .badge{font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:999px;white-space:nowrap}
+  .b-recebido{background:rgba(191,191,191,.15);color:#d8d8d8;border:1px solid rgba(191,191,191,.3)}
+  .b-conserto{background:rgba(127,166,201,.15);color:var(--azul);border:1px solid rgba(127,166,201,.35)}
+  .b-pronto{background:rgba(139,176,106,.18);color:var(--verde-ok);border:1px solid rgba(139,176,106,.4)}
+  .b-entregue{background:rgba(201,169,80,.15);color:var(--gold-claro);border:1px solid var(--linha)}
+  .b-cancelado{background:rgba(230,184,184,.12);color:var(--vermelho);border:1px solid rgba(230,184,184,.3)}
+  /* timeline */
+  .tl{display:flex;align-items:center;margin:14px 2px 4px}
+  .tl .st{flex:1;text-align:center;position:relative}
+  .tl .dot{width:15px;height:15px;border-radius:50%;background:var(--verde-noite);border:2px solid var(--linha-fraca);margin:0 auto 5px}
+  .tl .st.done .dot{background:var(--gold);border-color:var(--gold)}
+  .tl .st.cur .dot{background:var(--verde-noite);border-color:var(--gold);box-shadow:0 0 0 4px rgba(201,169,80,.18)}
+  .tl .lin{position:absolute;top:6px;left:-50%;width:100%;height:2px;background:var(--linha-fraca);z-index:-1}
+  .tl .st.done .lin,.tl .st.cur .lin{background:var(--gold)}
+  .tl .st:first-child .lin{display:none}
+  .tl .lab{font-size:11px;color:var(--creme-suave)}
+  .tl .st.done .lab,.tl .st.cur .lab{color:var(--gold-claro)}
+  .cc-acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .cc-foto{width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid var(--linha);cursor:pointer}
+  .vazio{text-align:center;color:var(--creme-suave);padding:32px 12px;font-size:14px}
+  /* modais */
+  .ov{position:fixed;inset:0;background:rgba(20,26,10,.72);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+  .ov.on{display:flex}
+  .modal{background:var(--verde-escuro);border:1px solid var(--gold);border-radius:18px;max-width:440px;width:100%;padding:22px 20px}
+  .modal h3{font-size:21px;margin-bottom:6px}
+  .modal p{color:var(--creme);font-size:14px;margin:8px 0}
+  .modal .zap{background:var(--verde-noite);border:1px solid var(--linha);border-radius:12px;padding:12px;font-size:13px;color:var(--creme-suave);white-space:pre-wrap;margin:12px 0;max-height:190px;overflow:auto}
+  .modal .row{display:flex;gap:8px;margin-top:12px}
+  .modal .row .btn-ouro,.modal .row .btn-linha{margin-top:0;flex:1}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--verde-noite);border:1px solid var(--gold);color:var(--gold-claro);padding:11px 18px;border-radius:999px;font-size:14px;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
+  .toast.on{opacity:1}
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:70;padding:18px}
+  .lightbox.on{display:flex}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:12px}
+  .load{text-align:center;color:var(--creme-suave);padding:40px 12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <div class="kick">Loretto Scarpa</div>
+      <h1>Consertos</h1>
+    </div>
+  </div>
+  <div class="sub">Abra o ticket do sapato e acompanhe o reparo. O Yuri cuida da oficina e do andamento.</div>
+  <span class="quem" id="quem"><span class="ava" id="ava">?</span><span id="quemNome">carregando…</span></span>
+
+  <div class="tabs">
+    <div class="tab on" data-view="novo" onclick="irView('novo')">Abrir conserto</div>
+    <div class="tab" data-view="acomp" onclick="irView('acomp')">Meus consertos<span class="n" id="tabN" style="display:none">0</span></div>
+  </div>
+
+  <!-- ABRIR -->
+  <section id="view-novo">
+    <div class="card">
+      <h3>Abrir ticket de conserto</h3>
+      <p class="hint">Sapato recebido na loja. O ticket é numerado automaticamente e vai direto pro Yuri.</p>
+
+      <label class="lbl">Cliente <span class="req">*</span></label>
+      <input class="fld" id="f-cliente" placeholder="Nome do cliente">
+
+      <label class="lbl">Contato (WhatsApp) <span class="req">*</span></label>
+      <input class="fld" id="f-contato" inputmode="tel" placeholder="(62) 9 9999-9999">
+
+      <label class="lbl">Modelo / descrição do sapato <span class="req">*</span></label>
+      <input class="fld" id="f-modelo" placeholder="Ex.: Oxford Wholecut café nº 42">
+
+      <label class="lbl">Tipo de conserto</label>
+      <select class="fld" id="f-tipo"></select>
+
+      <label class="lbl" id="lbl-vend" style="display:none">Vendedora</label>
+      <select class="fld" id="f-vend" style="display:none"></select>
+
+      <label class="lbl">Observações</label>
+      <textarea class="fld" id="f-obs" placeholder="Estado do sapato, o que o cliente pediu, combinados…"></textarea>
+
+      <label class="lbl">Foto do sapato</label>
+      <div class="foto-row">
+        <button type="button" onclick="fotoBtn('cam')">📷 Câmera</button>
+        <button type="button" onclick="fotoBtn('file')">📎 Anexar</button>
+        <button type="button" onclick="fotoBtn('paste')">📋 Colar</button>
+      </div>
+      <input type="file" id="f-cam" accept="image/*" capture="environment" class="hide">
+      <input type="file" id="f-file" accept="image/*" class="hide">
+      <img id="preview" alt="prévia">
+
+      <button class="btn-ouro" id="btn-salvar" onclick="salvar()">Abrir ticket de conserto</button>
+    </div>
+  </section>
+
+  <!-- ACOMPANHAR -->
+  <section id="view-acomp" class="hide">
+    <div class="segs">
+      <div class="seg on" data-sub="andamento" onclick="irSub('andamento')">Em andamento<span class="n" id="segN" style="display:none">0</span></div>
+      <div class="seg" data-sub="concluidos" onclick="irSub('concluidos')">Concluídos</div>
+    </div>
+    <div class="resumo" id="resumo"></div>
+    <input class="fld busca" id="busca" placeholder="Buscar por ticket ou cliente…" oninput="renderLista()">
+    <div id="lista"><div class="load">Carregando…</div></div>
+  </section>
+</div>
+
+<!-- Modal: avisar Yuri (obrigatório) -->
+<div class="ov" id="ov-yuri">
+  <div class="modal">
+    <h3>Avise o Yuri</h3>
+    <p>O ticket <b id="y-tk" class="mono"></b> foi aberto. O Yuri só começa o reparo depois que você avisa.</p>
+    <div class="zap" id="y-msg"></div>
+    <div class="row">
+      <button class="btn-linha" onclick="copiarYuri()">Copiar</button>
+      <button class="btn-ouro" onclick="avisarYuri()">Avisar Yuri agora</button>
+    </div>
+    <div class="row"><button class="btn-linha" style="flex:1" onclick="fecharYuri()">Já avisei / fechar</button></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lb" onclick="this.classList.remove('on')"><img id="lb-img"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= Firebase (mesmo projeto da Central) ================= */
+const firebaseConfig={apiKey:"AIzaSyCogQoTSULCdC1JhTb0IUilWAIA1itBJ8U",authDomain:"loretto-scarpa-l-icr.firebaseapp.com",projectId:"loretto-scarpa-l-icr",storageBucket:"loretto-scarpa-l-icr.firebasestorage.app",messagingSenderId:"428188657366",appId:"1:428188657366:web:b5df75e03027c4a483cb77"};
+let db=null, auth=null, FB_OK=false;
+try{firebase.initializeApp(firebaseConfig);auth=firebase.auth();auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);db=firebase.firestore();FB_OK=true;}catch(e){console.warn('FB',e);}
+
+/* ================= Constantes (casam com a Central de Estoque) ================= */
+const YURI_TEL='5562996592844', YURI_NOME='Yuri';
+const VENDEDORAS=['Jhennifer','Ialey','Michelly','Natália'];
+const TIPOS=['Troca de solado','Troca de salto/tampa','Costura','Colagem','Limpeza / hidratação','Tingimento / pintura','Troca de palmilha','Reparo de couro','Ajuste de tamanho','Outro'];
+const ST={recebido:{r:'Recebido'},conserto:{r:'Em conserto'},pronto:{r:'Pronto'},entregue:{r:'Entregue'},cancelado:{r:'Cancelado'}};
+const SEQ=['recebido','conserto','pronto','entregue'];
+const CUSTO_PAR=25.00;
+/* email -> nome (mesmo padrão da Central: primeiro nome sem acento + lorettoscarpa@gmail.com) */
+const EMAIL_NOME={
+  'jhenniferlorettoscarpa@gmail.com':'Jhennifer',
+  'ialeylorettoscarpa@gmail.com':'Ialey',
+  'michellylorettoscarpa@gmail.com':'Michelly',
+  'natalialorettoscarpa@gmail.com':'Natália',
+  'lorettoscarpa@gmail.com':'Gregory',
+  'larissalorettoscarpa@gmail.com':'Larissa',
+  'yurilorettoscarpa@gmail.com':'Yuri',
+  'edsonlorettoscarpa@gmail.com':'Edson'
+};
+
+/* ================= Estado ================= */
+let MEU_NOME='', EH_VEND=false, lista=[], unsub=null, foto=null, ultimoAviso=null, subAcomp='andamento';
+const ABERTOS=['recebido','conserto','pronto'], CONCLUIDOS=['entregue','cancelado'];
+function dataFmt(ts){if(!ts)return '—';return new Date(ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});}
+function diasDesde(ts){if(!ts)return 0;return Math.floor((Date.now()-ts)/86400000);}
+function diasTxt(ts){const d=diasDesde(ts);if(d<=0)return 'aberto hoje';if(d===1)return 'há 1 dia aberto';return 'há '+d+' dias aberto';}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dig=t=>(t||'').replace(/\D/g,'');
+function wa(tel,txt){let n=dig(tel);if(!n)return null;if(n.length<=11)n='55'+n;return 'https://wa.me/'+n+'?text='+encodeURIComponent(txt);}
+function tkFmt(n){return 'CON-'+String(n||0).padStart(4,'0');}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2200);}
+function fdh(ts){if(!ts)return '';const d=new Date(ts);return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+function inicial(n){return (String(n||'?').trim()[0]||'?').toUpperCase();}
+
+/* ================= Login automático (herda o login da Central) ================= */
+function definirUsuario(nome){
+  MEU_NOME=nome||'';
+  EH_VEND=VENDEDORAS.indexOf(MEU_NOME)>=0;
+  $('quemNome').textContent=MEU_NOME||'Visitante';
+  $('ava').textContent=inicial(MEU_NOME);
+  /* se não for vendedora (gestor/Yuri/Edson) mostra seletor de vendedora no form */
+  $('f-vend').style.display=EH_VEND?'none':'';
+  $('lbl-vend').style.display=EH_VEND?'none':'';
+  iniciarListener();
+}
+if(FB_OK){
+  auth.onAuthStateChanged(u=>{
+    const email=(u&&u.email||'').toLowerCase().trim();
+    definirUsuario(EMAIL_NOME[email]||'');
+  });
+}else{ definirUsuario(''); }
+
+/* ================= Preencher selects ================= */
+$('f-tipo').innerHTML='<option value="" selected>Selecione…</option>'+TIPOS.map(t=>'<option>'+esc(t)+'</option>').join('');
+$('f-vend').innerHTML='<option value="" selected>Selecione…</option>'+VENDEDORAS.map(v=>'<option>'+esc(v)+'</option>').join('');
+
+/* ================= Navegação ================= */
+function irView(v){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.view===v));
+  $('view-novo').classList.toggle('hide',v!=='novo');
+  $('view-acomp').classList.toggle('hide',v!=='acomp');
+  if(v==='acomp')renderLista();
+}
+function irSub(s){
+  subAcomp=s;
+  document.querySelectorAll('.seg').forEach(t=>t.classList.toggle('on',t.dataset.sub===s));
+  $('resumo').style.display=(s==='andamento')?'flex':'none';
+  renderLista();
+}
+
+/* ================= Firestore listener ================= */
+function iniciarListener(){
+  if(!FB_OK)return;
+  if(unsub)unsub();
+  let ref=db.collection('ls_consertos');
+  try{ref=ref.orderBy('criadoEm','desc');}catch(_){}
+  unsub=ref.onSnapshot(snap=>{
+    lista=[];snap.forEach(d=>lista.push(Object.assign({id:d.id},d.data())));
+    renderResumoTab();renderLista();
+  },err=>{console.warn(err);$('lista').innerHTML='<div class="vazio">Não consegui carregar agora.</div>';});
+}
+function meus(){
+  if(EH_VEND)return lista.filter(c=>c.vendedora===MEU_NOME);
+  return lista.slice(); /* gestor/Yuri vê todos */
+}
+
+/* ================= Foto ================= */
+$('f-cam').addEventListener('change',e=>{if(e.target.files[0])processarFoto(e.target.files[0]);});
+$('f-file').addEventListener('change',e=>{if(e.target.files[0])processarFoto(e.target.files[0]);});
+document.addEventListener('paste',e=>{
+  if($('view-novo').classList.contains('hide'))return;
+  const it=(e.clipboardData&&e.clipboardData.items)||[];
+  for(let i=0;i<it.length;i++){if(it[i].type.indexOf('image/')===0){processarFoto(it[i].getAsFile());break;}}
+});
+function fotoBtn(k){if(k==='cam')$('f-cam').click();else if(k==='file')$('f-file').click();else toast('Copie a imagem e cole (Ctrl+V)');}
+function processarFoto(file){
+  const r=new FileReader();
+  r.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=1000,sc=Math.min(1,max/Math.max(img.width,img.height));
+      const cv=document.createElement('canvas');cv.width=img.width*sc;cv.height=img.height*sc;
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      foto=cv.toDataURL('image/jpeg',0.7);
+      const p=$('preview');p.src=foto;p.classList.add('show');
+    };
+    img.src=ev.target.result;
+  };
+  r.readAsDataURL(file);
+}
+
+/* ================= Salvar ticket ================= */
+function salvar(){
+  const cliente=$('f-cliente').value.trim(), contato=$('f-contato').value.trim(), modelo=$('f-modelo').value.trim();
+  const vendedora=EH_VEND?MEU_NOME:($('f-vend').value||'');
+  let faltando=[];
+  [['f-cliente',cliente],['f-contato',contato],['f-modelo',modelo]].forEach(([id,v])=>{
+    $(id).classList.toggle('err-box',!v);if(!v)faltando.push(id);
+  });
+  if(!EH_VEND){$('f-vend').classList.toggle('err-box',!vendedora);if(!vendedora)faltando.push('vend');}
+  if(faltando.length){toast('Preencha os campos marcados');return;}
+  if(!FB_OK){toast('Sem conexão. Publique o painel para salvar.');return;}
+
+  const btn=$('btn-salvar');btn.disabled=true;btn.textContent='Salvando…';
+  const agora=Date.now();
+  const n=lista.reduce((m,c)=>Math.max(m,(+c.ticket||0)),0)+1;
+  const obj={
+    ticket:n, status:'recebido', criadoEm:agora, recebidoEm:agora,
+    cliente, contato, modelo, tipo:$('f-tipo').value||'', obs:$('f-obs').value.trim(),
+    vendedora, criadoPor:MEU_NOME||vendedora,
+    /* campos do Yuri — ficam vazios pra ele preencher no estoque */
+    oficina:'', valor:'', pares:1, custoPar:CUSTO_PAR, prazo:'',
+    foto:foto||null
+  };
+  const id='c'+agora+Math.floor(Math.random()*999);
+  db.collection('ls_consertos').doc(id).set(obj).then(()=>{
+    obj.id=id;
+    limpar();
+    abrirAvisoYuri(obj);
+    irView('acomp');
+  }).catch(e=>{toast('Erro ao salvar: '+(e.message||''));}).finally(()=>{btn.disabled=false;btn.textContent='Abrir ticket de conserto';});
+}
+function limpar(){
+  ['f-cliente','f-contato','f-modelo','f-obs'].forEach(id=>{$(id).value='';$(id).classList.remove('err-box');});
+  $('f-tipo').selectedIndex=0;$('f-vend').selectedIndex=0;$('f-vend').classList.remove('err-box');
+  foto=null;const p=$('preview');p.src='';p.classList.remove('show');
+}
+
+/* ================= Aviso obrigatório ao Yuri ================= */
+function msgYuri(c){
+  return 'Oi '+YURI_NOME+'! Cheguei um conserto pra você:\n\n'+
+    'Ticket: '+tkFmt(c.ticket)+'\n'+
+    'Cliente: '+c.cliente+'\n'+
+    'Sapato: '+c.modelo+'\n'+
+    (c.tipo?'Serviço: '+c.tipo+'\n':'')+
+    (c.obs?'Obs.: '+c.obs+'\n':'')+
+    'Vendedora: '+c.vendedora+'\n\n'+
+    'Já está na loja pra você conferir. Obrigada!';
+}
+function abrirAvisoYuri(c){
+  ultimoAviso=c;
+  $('y-tk').textContent=tkFmt(c.ticket);
+  $('y-msg').textContent=msgYuri(c);
+  $('ov-yuri').classList.add('on');
+}
+function avisarYuri(){
+  if(!ultimoAviso)return;
+  const l=wa(YURI_TEL,msgYuri(ultimoAviso));
+  if(l)window.open(l,'_blank');
+  fecharYuri();
+}
+function copiarYuri(){
+  if(!ultimoAviso)return;
+  try{navigator.clipboard.writeText(msgYuri(ultimoAviso));toast('Mensagem copiada');}catch(_){toast('Copie manualmente');}
+}
+function fecharYuri(){$('ov-yuri').classList.remove('on');}
+
+/* ================= Acompanhar ================= */
+function renderResumoTab(){
+  const m=meus();
+  const abertos=m.filter(c=>ABERTOS.indexOf(c.status)>=0).length;
+  const tn=$('tabN'), sn=$('segN');
+  if(abertos>0){tn.style.display='';tn.textContent=abertos;sn.style.display='';sn.textContent=abertos;}
+  else{tn.style.display='none';sn.style.display='none';}
+  const cont=t=>m.filter(c=>c.status===t).length;
+  $('resumo').innerHTML=
+    '<div class="chip">Recebidos<b>'+cont('recebido')+'</b></div>'+
+    '<div class="chip">Em conserto<b>'+cont('conserto')+'</b></div>'+
+    '<div class="chip">Prontos<b>'+cont('pronto')+'</b></div>';
+}
+function timeline(c){
+  if(c.status==='cancelado')return '<div style="margin-top:12px"><span class="badge b-cancelado">Cancelado</span></div>';
+  const idx=SEQ.indexOf(c.status);
+  return '<div class="tl">'+SEQ.map((s,i)=>{
+    const cls=i<idx?'done':(i===idx?'cur':'');
+    return '<div class="st '+cls+'"><div class="lin"></div><div class="dot"></div><div class="lab">'+ST[s].r+'</div></div>';
+  }).join('')+'</div>';
+}
+function renderLista(){
+  const box=$('lista');if(!box)return;
+  const emAnd=(subAcomp==='andamento');
+  const q=($('busca').value||'').toLowerCase().trim();
+  let m=meus().filter(c=>(emAnd?ABERTOS:CONCLUIDOS).indexOf(c.status)>=0);
+  if(q){const qn=q.replace(/\D/g,'');m=m.filter(c=>tkFmt(c.ticket).toLowerCase().indexOf(q)>=0||(qn&&(''+(c.ticket||'')).indexOf(qn)>=0)||(c.cliente||'').toLowerCase().indexOf(q)>=0);}
+  if(emAnd){
+    const ordem={recebido:0,conserto:1,pronto:2};
+    m.sort((a,b)=>(ordem[a.status]-ordem[b.status])||((b.criadoEm||0)-(a.criadoEm||0)));
+  }else{
+    m.sort((a,b)=>((b.entregueEm||b.canceladoEm||b.criadoEm||0)-(a.entregueEm||a.canceladoEm||a.criadoEm||0)));
+  }
+  if(!m.length){
+    box.innerHTML=emAnd
+      ? '<div class="vazio">Nenhum conserto em andamento.<br>Abra um na aba "Abrir conserto".</div>'
+      : '<div class="vazio">Nenhum conserto concluído ainda.</div>';
+    return;
+  }
+  box.innerHTML=m.map(c=>{
+    const bcl='b-'+c.status;
+    const fotoEl=c.foto?'<img class="cc-foto" src="'+c.foto+'" onclick="verFoto(\''+c.id+'\')">':'';
+    /* meta de datas */
+    let meta='';
+    if(emAnd){
+      const d=diasDesde(c.criadoEm);
+      const alerta=d>=7?' alerta':'';
+      meta='<div class="cc-meta">'+
+        '<span class="pill">Aberto em '+dataFmt(c.criadoEm)+'</span>'+
+        '<span class="pill'+alerta+'">'+diasTxt(c.criadoEm)+'</span>'+
+      '</div>';
+    }else{
+      const fim=c.entregueEm||c.canceladoEm;
+      const rot=c.status==='entregue'?'Entregue em ':'Cancelado em ';
+      meta='<div class="cc-meta"><span class="pill">Aberto em '+dataFmt(c.criadoEm)+'</span>'+
+        (fim?'<span class="pill">'+rot+dataFmt(fim)+'</span>':'')+'</div>';
+    }
+    /* ações */
+    let acts='';
+    if(emAnd){
+      acts+='<button class="btn-linha" onclick="cobrarYuri(\''+c.id+'\')">Falar com o Yuri</button>';
+      if(c.status==='pronto')acts+='<button class="btn-linha" onclick="avisarCliente(\''+c.id+'\')" style="border-color:var(--verde-ok);color:var(--verde-ok)">Avisar cliente</button>';
+    }
+    return '<div class="cc">'+
+      '<div class="cc-top"><div>'+
+        '<div class="cc-tk">'+tkFmt(c.ticket)+'</div>'+
+        '<div class="cc-cli">'+esc(c.cliente)+'</div>'+
+        '<div class="cc-mod">'+esc(c.modelo)+'</div>'+
+        (c.tipo?'<span class="cc-tipo">'+esc(c.tipo)+'</span>':'')+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">'+
+        '<span class="badge '+bcl+'">'+ST[c.status].r+'</span>'+fotoEl+
+      '</div></div>'+
+      (EH_VEND?'':'<div class="cc-mod" style="margin-top:6px;font-size:12px">Vendedora: '+esc(c.vendedora||'—')+'</div>')+
+      meta+
+      timeline(c)+
+      (acts?'<div class="cc-acts">'+acts+'</div>':'')+
+    '</div>';
+  }).join('');
+}
+function acharC(id){return lista.find(c=>c.id===id);}
+function verFoto(id){const c=acharC(id);if(c&&c.foto){$('lb-img').src=c.foto;$('lb').classList.add('on');}}
+function cobrarYuri(id){
+  const c=acharC(id);if(!c)return;
+  const txt='Oi '+YURI_NOME+'! Como está o conserto '+tkFmt(c.ticket)+' ('+c.modelo+') do cliente '+c.cliente+'? Situação atual: '+(ST[c.status]||{}).r+'. Obrigada!';
+  const l=wa(YURI_TEL,txt);if(l)window.open(l,'_blank');
+}
+function avisarCliente(id){
+  const c=acharC(id);if(!c)return;
+  const txt='Olá '+c.cliente+'! Aqui é da Loretto Scarpa. Seu conserto ('+(c.tipo||c.modelo)+') está PRONTO para retirada. Pode passar na loja quando quiser!';
+  const l=c.contato?wa(c.contato,txt):null;
+  if(l)window.open(l,'_blank');else{try{navigator.clipboard.writeText(txt);toast('Sem contato — mensagem copiada');}catch(_){toast('Sem contato do cliente');}}
+}
+
+/* avisa a Central que estamos prontos (protocolo do hub) */
+try{window.parent&&window.parent.postMessage({tipo:'central-ready',painel:'consertos'},'*');}catch(_){}
+</script>
+</body>
+</html>
