@@ -76,6 +76,7 @@
   .foto-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
   .foto-row button{flex:1;min-width:96px;background:rgba(255,255,255,.05);border:1px solid var(--linha);color:var(--creme);border-radius:11px;padding:11px;font-size:13.5px;cursor:pointer;transition:.15s}
   .foto-row button:hover{border-color:var(--gold);background:rgba(212,180,90,.1)}
+  .foto-row.err-box{outline:1px solid #d67878;outline-offset:3px;border-radius:12px}
   #preview{display:none;margin-top:12px;max-width:100%;max-height:230px;border-radius:12px;border:1px solid var(--linha)}
   #preview.show{display:block}
 
@@ -167,7 +168,7 @@
       <div class="sub">Loretto Scarpa</div>
     </div>
   </header>
-  <div class="intro">Abra o ticket do sapato e acompanhe o reparo. O Yuri cuida da oficina e do andamento.</div>
+  <div class="intro">Abra o ticket do sapato e acompanhe o reparo.</div>
 
   <div class="tabs">
     <div class="tab on" data-view="novo" onclick="irView('novo')">Abrir conserto</div>
@@ -180,25 +181,7 @@
       <h3>Abrir ticket de conserto</h3>
       <p class="hint">Sapato recebido na loja. O ticket é numerado automaticamente e vai direto pro Yuri.</p>
 
-      <label class="lbl">Cliente <span class="req">*</span></label>
-      <input class="fld" id="f-cliente" placeholder="Nome do cliente">
-
-      <label class="lbl">Contato (WhatsApp) <span class="req">*</span></label>
-      <input class="fld" id="f-contato" inputmode="tel" placeholder="(62) 9 9999-9999">
-
-      <label class="lbl">Modelo / descrição do sapato <span class="req">*</span></label>
-      <input class="fld" id="f-modelo" placeholder="Ex.: Oxford Wholecut café nº 42">
-
-      <label class="lbl">Tipo de conserto</label>
-      <select class="fld" id="f-tipo"></select>
-
-      <label class="lbl" id="lbl-vend" style="display:none">Vendedora</label>
-      <select class="fld" id="f-vend" style="display:none"></select>
-
-      <label class="lbl">Observações</label>
-      <textarea class="fld" id="f-obs" placeholder="Estado do sapato, o que o cliente pediu, combinados…"></textarea>
-
-      <label class="lbl">Foto do sapato</label>
+      <label class="lbl">Foto do sapato <span class="req">*</span></label>
       <div class="foto-row">
         <button type="button" onclick="fotoBtn('cam')">📷 Câmera</button>
         <button type="button" onclick="fotoBtn('file')">📎 Anexar</button>
@@ -207,6 +190,24 @@
       <input type="file" id="f-cam" accept="image/*" capture="environment" class="hide">
       <input type="file" id="f-file" accept="image/*" class="hide">
       <img id="preview" alt="prévia">
+
+      <label class="lbl">Cliente <span class="req">*</span></label>
+      <input class="fld" id="f-cliente" placeholder="Nome do cliente">
+
+      <label class="lbl">Contato (WhatsApp) <span class="req">*</span></label>
+      <input class="fld" id="f-contato" inputmode="tel" placeholder="(62) 9 9999-9999">
+
+      <label class="lbl">Descrição do defeito <span class="req">*</span></label>
+      <input class="fld" id="f-modelo" placeholder="Ex.: solado descolando na ponta, salto gasto…">
+
+      <label class="lbl">Tipo de conserto</label>
+      <select class="fld" id="f-tipo"></select>
+
+      <label class="lbl" id="lbl-vend" style="display:none">Vendedora</label>
+      <select class="fld" id="f-vend" style="display:none"></select>
+
+      <label class="lbl">Observações</label>
+      <textarea class="fld" id="f-obs" placeholder="O que o cliente pediu, combinados, estado do sapato…"></textarea>
 
       <button class="btn-ouro" id="btn-salvar" onclick="salvar()">Abrir ticket de conserto</button>
     </div>
@@ -234,8 +235,28 @@
       <button class="btn-linha" onclick="copiarYuri()">Copiar</button>
       <button class="btn-ouro" onclick="avisarYuri()">Avisar Yuri agora</button>
     </div>
-    <div class="row"><button class="btn-linha" style="flex:1" onclick="imprimirEtiqueta()">Imprimir etiqueta</button></div>
     <div class="row"><button class="btn-linha" style="flex:1" onclick="fecharYuri()">Já avisei / fechar</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ov-edit">
+  <div class="modal">
+    <h3>Editar conserto</h3>
+    <p>Ticket <b id="e-tk" class="mono" style="color:var(--gold)"></b> — corrija os dados antes do Yuri começar.</p>
+    <label class="lbl">Cliente <span class="req">*</span></label>
+    <input class="fld" id="e-cliente">
+    <label class="lbl">Contato (WhatsApp) <span class="req">*</span></label>
+    <input class="fld" id="e-contato" inputmode="tel">
+    <label class="lbl">Descrição do defeito <span class="req">*</span></label>
+    <input class="fld" id="e-modelo">
+    <label class="lbl">Tipo de conserto</label>
+    <select class="fld" id="e-tipo"></select>
+    <label class="lbl">Observações</label>
+    <textarea class="fld" id="e-obs"></textarea>
+    <div class="row">
+      <button class="btn-linha" style="flex:1" onclick="fecharEdit()">Fechar</button>
+      <button class="btn-ouro" style="flex:1" onclick="salvarEdit()">Salvar alterações</button>
+    </div>
   </div>
 </div>
 
@@ -276,7 +297,8 @@ function diasTxt(ts){const d=diasDesde(ts);if(d<=0)return 'aberto hoje';if(d===1
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const dig=t=>(t||'').replace(/\D/g,'');
-function wa(tel,txt){let n=dig(tel);if(!n)return null;if(n.length<=11)n='55'+n;return 'https://wa.me/'+n+'?text='+encodeURIComponent(txt);}
+function normWa(t){let d=dig(t);if(!d)return'';if(d.length>=12){if(d.length===12&&/[6-9]/.test(d[4]))d=d.slice(0,4)+'9'+d.slice(4);return d;}if(d.length===10&&/[6-9]/.test(d[2]))d=d.slice(0,2)+'9'+d.slice(2);return'55'+d;}
+function wa(tel,txt){const n=normWa(tel);if(!n)return null;return 'https://wa.me/'+n+'?text='+encodeURIComponent(txt);}
 function tkFmt(n){return 'CON-'+String(n||0).padStart(4,'0');}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2200);}
 function fdh(ts){if(!ts)return '';const d=new Date(ts);return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
@@ -303,6 +325,7 @@ if(FB_OK){
 /* ================= Preencher selects ================= */
 $('f-tipo').innerHTML='<option value="" selected>Selecione…</option>'+TIPOS.map(t=>'<option>'+esc(t)+'</option>').join('');
 $('f-vend').innerHTML='<option value="" selected>Selecione…</option>'+VENDEDORAS.map(v=>'<option>'+esc(v)+'</option>').join('');
+$('e-tipo').innerHTML='<option value="">Selecione…</option>'+TIPOS.map(t=>'<option>'+esc(t)+'</option>').join('');
 
 /* ================= Navegação ================= */
 function irView(v){
@@ -353,6 +376,7 @@ function processarFoto(file){
       cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
       foto=cv.toDataURL('image/jpeg',0.7);
       const p=$('preview');p.src=foto;p.classList.add('show');
+      const fr=document.querySelector('.foto-row');if(fr)fr.classList.remove('err-box');
     };
     img.src=ev.target.result;
   };
@@ -368,7 +392,8 @@ function salvar(){
     $(id).classList.toggle('err-box',!v);if(!v)faltando.push(id);
   });
   if(!EH_VEND){$('f-vend').classList.toggle('err-box',!vendedora);if(!vendedora)faltando.push('vend');}
-  if(faltando.length){toast('Preencha os campos marcados');return;}
+  const fotoRow=document.querySelector('.foto-row');if(fotoRow)fotoRow.classList.toggle('err-box',!foto);if(!foto)faltando.push('foto');
+  if(faltando.length){toast(faltando.length===1&&faltando[0]==='foto'?'A foto do sapato é obrigatória':'Preencha os campos marcados');return;}
   if(!FB_OK){toast('Sem conexão. Publique o painel para salvar.');return;}
 
   const btn=$('btn-salvar');btn.disabled=true;btn.textContent='Salvando…';
@@ -394,6 +419,7 @@ function limpar(){
   ['f-cliente','f-contato','f-modelo','f-obs'].forEach(id=>{$(id).value='';$(id).classList.remove('err-box');});
   $('f-tipo').selectedIndex=0;$('f-vend').selectedIndex=0;$('f-vend').classList.remove('err-box');
   foto=null;const p=$('preview');p.src='';p.classList.remove('show');
+  const fr=document.querySelector('.foto-row');if(fr)fr.classList.remove('err-box');
 }
 
 /* ================= Aviso obrigatório ao Yuri ================= */
@@ -401,7 +427,7 @@ function msgYuri(c){
   return 'Oi '+YURI_NOME+'! Cheguei um conserto pra você:\n\n'+
     'Ticket: '+tkFmt(c.ticket)+'\n'+
     'Cliente: '+c.cliente+'\n'+
-    'Sapato: '+c.modelo+'\n'+
+    'Defeito: '+c.modelo+'\n'+
     (c.tipo?'Serviço: '+c.tipo+'\n':'')+
     (c.obs?'Obs.: '+c.obs+'\n':'')+
     'Vendedora: '+c.vendedora+'\n\n'+
@@ -485,9 +511,13 @@ function renderLista(){
     /* ações */
     let acts='';
     if(emAnd){
-      acts+='<button class="btn-linha" onclick="imprimirEtiqueta(\''+c.id+'\')">Etiqueta</button>';
       acts+='<button class="btn-linha" onclick="cobrarYuri(\''+c.id+'\')">Falar com o Yuri</button>';
-      if(c.status==='pronto')acts+='<button class="btn-linha" onclick="avisarCliente(\''+c.id+'\')" style="border-color:var(--verde-ok);color:var(--verde-ok)">Avisar cliente</button>';
+      acts+='<button class="btn-linha" onclick="falarCliente(\''+c.id+'\')">Falar com o cliente</button>';
+      if(c.status==='pronto')acts+='<button class="btn-linha" onclick="avisarCliente(\''+c.id+'\')" style="border-color:var(--ok);color:var(--ok)">Avisar cliente</button>';
+      if(podeEditar(c)){
+        acts+='<button class="btn-linha" onclick="editarConserto(\''+c.id+'\')">Editar</button>';
+        acts+='<button class="btn-linha" onclick="cancelarConserto(\''+c.id+'\')" style="border-color:var(--vermelho);color:#e79b90">Cancelar</button>';
+      }
     }
     return '<div class="cc st-'+c.status+'">'+
       '<div class="cc-top"><div>'+
@@ -507,11 +537,49 @@ function renderLista(){
   }).join('');
 }
 function acharC(id){return lista.find(c=>c.id===id);}
+let editId=null;
+function podeEditar(c){return c && c.status==='recebido' && (!EH_VEND || c.vendedora===MEU_NOME);}
+function editarConserto(id){
+  const c=acharC(id);if(!c)return;
+  if(!podeEditar(c)){toast('Só dá pra editar antes do Yuri começar');return;}
+  editId=id;
+  $('e-tk').textContent=tkFmt(c.ticket);
+  $('e-cliente').value=c.cliente||'';
+  $('e-contato').value=c.contato||'';
+  $('e-modelo').value=c.modelo||'';
+  $('e-tipo').value=c.tipo||'';
+  $('e-obs').value=c.obs||'';
+  $('ov-edit').classList.add('on');
+}
+function fecharEdit(){$('ov-edit').classList.remove('on');editId=null;}
+function salvarEdit(){
+  if(!editId||!FB_OK)return;
+  const cliente=$('e-cliente').value.trim(),contato=$('e-contato').value.trim(),modelo=$('e-modelo').value.trim();
+  if(!cliente||!contato||!modelo){toast('Preencha cliente, contato e modelo');return;}
+  db.collection('ls_consertos').doc(editId).update({cliente,contato,modelo,tipo:$('e-tipo').value||'',obs:$('e-obs').value.trim()})
+    .then(()=>{toast('Conserto atualizado');fecharEdit();})
+    .catch(e=>toast('Erro ao salvar: '+(e.message||'')));
+}
+function cancelarConserto(id){
+  const c=acharC(id);if(!c)return;
+  if(!podeEditar(c)){toast('Só dá pra cancelar antes do Yuri começar');return;}
+  if(!confirm('Cancelar o conserto '+tkFmt(c.ticket)+' de '+(c.cliente||'')+'?'))return;
+  if(!FB_OK)return;
+  db.collection('ls_consertos').doc(id).update({status:'cancelado',canceladoEm:Date.now()})
+    .then(()=>toast('Conserto cancelado'))
+    .catch(e=>toast('Erro: '+(e.message||'')));
+}
 function verFoto(id){const c=acharC(id);if(c&&c.foto){$('lb-img').src=c.foto;$('lb').classList.add('on');}}
 function cobrarYuri(id){
   const c=acharC(id);if(!c)return;
   const txt='Oi '+YURI_NOME+'! Como está o conserto '+tkFmt(c.ticket)+' ('+c.modelo+') do cliente '+c.cliente+'? Situação atual: '+(ST[c.status]||{}).r+'. Obrigada!';
   const l=wa(YURI_TEL,txt);if(l)window.open(l,'_blank');
+}
+function falarCliente(id){
+  const c=acharC(id);if(!c)return;
+  const txt='Olá '+(c.cliente||'')+'! Aqui é da Loretto Scarpa, sobre o seu conserto '+tkFmt(c.ticket)+(c.tipo?' ('+c.tipo+')':'')+'.';
+  const l=c.contato?wa(c.contato,txt):null;
+  if(l)window.open(l,'_blank');else{try{navigator.clipboard.writeText(txt);toast('Sem contato — mensagem copiada');}catch(_){toast('Sem contato do cliente');}}
 }
 function avisarCliente(id){
   const c=acharC(id);if(!c)return;
